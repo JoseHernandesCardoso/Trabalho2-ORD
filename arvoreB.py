@@ -4,14 +4,17 @@
 
 from __future__ import annotations
 
+
 # RENOMEAÇÃO DE TIPOS
 Id = int
 Offset = int
 Rrn = int
 
+
 # EXCEPTIONS PERSONALIZADAS
 class ElementoRepetidoException(Exception):
     pass
+
 
 # DECLARAÇÃO DE CLASSES
 class Pagina:
@@ -44,5 +47,35 @@ class Pagina:
 
         :param id: Chave buscada
         :return: Dicionário {id: offset} do elemento ou None se não encontrar
+        '''
+        raise NotImplementedError
+
+
+class ArvoreB:
+    '''Uma árvore-B que relaciona ID e Offset e com ID como chave'''
+
+    raiz: Pagina
+
+    def __init__(self):
+        self.raiz = Pagina()
+        self.raiz.eh_raiz = True
+
+    def insere(self, id: Id, offset: Offset):
+        '''
+        Insere uma nova chave (id) com seu valor (offset) na árvore.
+
+        :param id: Nova chave a ser inserida
+        :param offset: Valor relacionado a chave
+
+        :raises ElementoRepetidoException: Se id fornecido já estiver na árvore
+        '''
+        raise NotImplementedError
+    
+    def busca(self, id: Id) -> dict[Id, Offset]:
+        '''
+        Busca um elemento na árvore.
+
+        :param id: Chave buscada.
+        :return: Dicionário {id: offset} do elemento ou None se não encontrar.
         '''
         raise NotImplementedError
