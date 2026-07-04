@@ -3,6 +3,7 @@
 # RA: 143470
 
 from __future__ import annotations
+from dataclasses import dataclass
 from math import ceil as arredonda_cima, floor as arredonda_baixo
 
 
@@ -11,6 +12,11 @@ Id = int
 Offset = int
 Rrn = int
 
+@dataclass
+class ParIdOffset:
+    '''Relaciona um ID a um offset de um arquivo'''
+    id: Id
+    offset: Offset
 
 # EXCEPTIONS PERSONALIZADAS
 class ElementoRepetidoException(Exception):
@@ -27,7 +33,7 @@ class Pagina:
     '''
 
     # ID é a chave da página
-    chaves: list[dict[Id, Offset]]
+    chaves: list[ParIdOffset | None]
     descendentes: list[Rrn]
     ordem: int
 
