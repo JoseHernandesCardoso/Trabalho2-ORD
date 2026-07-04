@@ -19,7 +19,12 @@ class ElementoRepetidoException(Exception):
 
 # DECLARAÇÃO DE CLASSES
 class Pagina:
-    '''Uma página de uma árvore B de ordem n'''
+    '''
+    Uma página de uma árvore-B de ordem n.
+
+    As chaves da página são IDs que se relacionam
+    a offsets de um arquivo de registros.
+    '''
 
     # ID é a chave da página
     chaves: list[dict[Id, Offset]]
@@ -51,25 +56,30 @@ class Pagina:
         '''
         Insere uma nova chave (id) com seu valor (offset) na página.
 
-        :param id: Nova chave a ser inserida
-        :param offset: Valor relacionado a chave
+        :param id: Nova chave a ser inserida.
+        :param offset: Valor relacionado a chave.
 
-        :raises ElementoRepetidoException: Se fornecido id já estiver na página
+        :raises ElementoRepetidoException: Se o id fornecido já estiver na página.
         '''
         raise NotImplementedError
     
-    def busca(self, id: Id) -> dict[Id, Offset] | None:
+    def busca(self, id: Id) -> Offset | None:
         '''
         Busca um elemento na página.
 
-        :param id: Chave buscada
-        :return: Dicionário {id: offset} do elemento ou None se não encontrar
+        :param id: Chave buscada.
+        :return: offset do elemento buscado ou None se não encontrar.
         '''
         raise NotImplementedError
 
 
 class ArvoreB:
-    '''Uma árvore-B que relaciona ID e Offset e com ID como chave'''
+    '''
+    Uma árvore-B de ordem n.
+
+    As chaves da árvore são IDs que se relacionam
+    a offsets de um arquivo de registros.
+    '''
 
     raiz: Pagina
     ordem: int
@@ -82,10 +92,10 @@ class ArvoreB:
         '''
         Insere uma nova chave (id) com seu valor (offset) na árvore.
 
-        :param id: Nova chave a ser inserida
-        :param offset: Valor relacionado a chave
+        :param id: Nova chave a ser inserida.
+        :param offset: Valor relacionado a chave.
 
-        :raises ElementoRepetidoException: Se id fornecido já estiver na árvore
+        :raises ElementoRepetidoException: Se o id fornecido já estiver na árvore.
         '''
         raise NotImplementedError
     
@@ -94,6 +104,6 @@ class ArvoreB:
         Busca um elemento na árvore.
 
         :param id: Chave buscada.
-        :return: Dicionário {id: offset} do elemento ou None se não encontrar.
+        :return: offset do elemento buscado ou None se não encontrar.
         '''
         raise NotImplementedError
