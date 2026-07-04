@@ -3,6 +3,7 @@
 # RA: 143470
 
 from __future__ import annotations
+from math import ceil as arredonda_cima, floor as arredonda_baixo
 
 
 # RENOMEAÇÃO DE TIPOS
@@ -23,12 +24,28 @@ class Pagina:
     # ID é a chave da página
     chaves: list[dict[Id, Offset]]
     descendentes: list[Rrn]
+    ordem: int
+
+    min_descendentes: int
+    max_descendentes: int
+    min_chaves: int
+    max_chaves: int
+
     eh_raiz: bool
 
-    def __init__(self):
+    def __init__(self, ordem: int):
         self.chaves = []
         self.descendentes = []
+
+        self.ordem = ordem
+        self.min_descendentes = arredonda_cima(ordem / 2)
+        self.max_descendentes = ordem
+        self.min_chaves = arredonda_cima(ordem / 2) - 1
+        self.max_chaves = ordem - 1
+
         self.eh_raiz = False
+
+
 
     def insere(self, id: Id, offset: Offset):
         '''
@@ -55,9 +72,10 @@ class ArvoreB:
     '''Uma árvore-B que relaciona ID e Offset e com ID como chave'''
 
     raiz: Pagina
+    ordem: int
 
-    def __init__(self):
-        self.raiz = Pagina()
+    def __init__(self, ordem: int):
+        self.raiz = Pagina(ordem)
         self.raiz.eh_raiz = True
 
     def insere(self, id: Id, offset: Offset):
