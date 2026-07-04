@@ -6,6 +6,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import ceil as arredonda_cima, floor as arredonda_baixo
 
+# Constantes
+
+CHAVE_INVALIDA = None
+DESCENDENTE_INVALIDO = -1
+
 
 # DEFINIÇÃO DE TIPOS
 Id = int
@@ -45,14 +50,14 @@ class Pagina:
     eh_raiz: bool
 
     def __init__(self, ordem: int):
-        self.chaves = []
-        self.descendentes = []
-
         self.ordem = ordem
         self.min_descendentes = arredonda_cima(ordem / 2)
         self.max_descendentes = ordem
         self.min_chaves = arredonda_cima(ordem / 2) - 1
         self.max_chaves = ordem - 1
+
+        self.chaves = [CHAVE_INVALIDA] * self.max_chaves
+        self.descendentes = [DESCENDENTE_INVALIDO] * self.max_descendentes
 
         self.eh_raiz = False
 
