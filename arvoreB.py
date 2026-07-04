@@ -6,7 +6,7 @@ from __future__ import annotations
 from math import ceil as arredonda_cima, floor as arredonda_baixo
 
 
-# RENOMEAÇÃO DE TIPOS
+# DEFINIÇÃO DE TIPOS
 Id = int
 Offset = int
 Rrn = int
@@ -50,14 +50,13 @@ class Pagina:
 
         self.eh_raiz = False
 
-
-
-    def insere(self, id: Id, offset: Offset):
+    def insere(self, id: Id, offset: Offset) -> bool:
         '''
         Insere uma nova chave (id) com seu valor (offset) na página.
 
         :param id: Nova chave a ser inserida.
         :param offset: Valor relacionado a chave.
+        :return: True se conseguiu inserir com sucesso, False se der overflow. 
 
         :raises ElementoRepetidoException: Se o id fornecido já estiver na página.
         '''
