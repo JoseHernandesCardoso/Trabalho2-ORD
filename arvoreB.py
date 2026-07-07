@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from io import BufferedReader, BufferedWriter, BufferedRandom
+from io import BufferedRandom, BufferedReader
 from struct import pack, unpack, calcsize
 from math import ceil as arredonda_cima, floor as arredonda_baixo
+from sys import argv
+import os
 
 # CONSTANTES
 NOME_ARQ_ARVORE = 'btree.dat'
@@ -194,7 +196,7 @@ class ArvoreB:
     a offsets de um arquivo de registros.
     '''
 
-    arquivo: BufferedRandom
+    arquivo: BufferedRandom | BufferedReader
     cabecalho_fmt: str # Ordem, num páginas, RRN da raiz
     tam_cabecalho_fmt: int
 
@@ -205,7 +207,7 @@ class ArvoreB:
     num_paginas: int
     rrn_raiz: Rrn
 
-    def __init__(self, arquivo: BufferedRandom, ordem: int, carrega_dados: bool):
+    def __init__(self, arquivo: BufferedRandom | BufferedReader, ordem: int, carrega_dados: bool):
         '''
         Inicia uma árvore-B vazia relacionada a um arquivo.
 
@@ -380,7 +382,7 @@ class ArvoreB:
             self.rrn_raiz = rrn_nova_raiz
             self.num_paginas += 1
         
-    def exibe_arvore(self):
+    def exibe(self):
         '''
         Exibe a árvore na tela.
         '''
@@ -399,19 +401,52 @@ class ArvoreB:
             if i == self.rrn_raiz: print('-='*31)
             print("\n")
 
+    def busca_na_arvore(self, id: Id, rrn: Rrn) -> int | None:
+        '''
+        Busca o offset de um elemento pela árvore-B a partir de uma página.
 
-# CARREGA INDICES PARA A ÁRVORE-B
-def carrega_indice(arvore_b: ArvoreB, nome_arq_dados: str):
+        :param id: ID do elemento buscado.
+        :param rrn: RRN da página onde será buscado.
+        :returns: Offset do elemento ou None se não encontrar.
+        '''
+        if rrn == RRN_INVALIDO:
+            return None
+
+        pag = self.carrega_pag(rrn)
+        res_busca = pag.busca(id)
+        if res_busca.achou:
+            return pag.chaves[res_busca.pos].offset
+        else:
+            return self.busca_na_arvore(id, pag.descendentes[res_busca.pos])
+
+    def busca_offset(self, id: Id) -> int | None:
+        '''
+        Busca o offset de um elemento pelo seu ID na árvore-B.
+
+        :param id: ID do elemento buscado.
+        :returns: Offset do elemento ou None se não encontrar.
+        '''
+        raiz = self.carrega_pag(self.rrn_raiz)
+        res_busca = raiz.busca(id)
+        if res_busca.achou:
+            return raiz.chaves[res_busca.pos].offset
+        else:
+            return self.busca_na_arvore(id, raiz.descendentes[res_busca.pos])
+
+
+# CRIA ÁRVORE-B DE INDICES
+def cria_indice(nome_arq_arvore: str, nome_arq_dados: str):
     '''
-    Carrega os indices de um arquivo de registros para uma árvore-B.
+    Cria uma árvore-B que serve de indice para o arquivo de dados
 
-    :param arvore_b: Arvore que receberá o indice.
+    :param nome_arq_arvore: Nome do arquivo da árvore
     :param nome_arq_dados: Nome do arquivo de dados com os registros.
     '''
-    with open(nome_arq_dados, 'br') as dados:
+    with open(nome_arq_dados, 'br') as dados, open(nome_arq_arvore, 'w+b') as arq_arvore:
+        arvore_b = ArvoreB(arq_arvore, ORDEM_ARVORE, carrega_dados=False)
+
         offset: Offset = 0
         tam_registro_bytes = dados.read(2)
-
         while tam_registro_bytes:
             tam_registro = int.from_bytes(tam_registro_bytes, 'little')
 
@@ -423,13 +458,109 @@ def carrega_indice(arvore_b: ArvoreB, nome_arq_dados: str):
             offset += 2 + tam_registro
             tam_registro_bytes = dados.read(2)
         
+        arvore_b.escreve_arvore()
+        
+
+# EXECUÇÃO DO ARQUIVO DE OPERAÇÕES
+def executa_operacoes(nome_arq_arvore: str, nome_arq_dados: str, nome_arq_oper: str):
+    '''
+    Executa as operações descritas em um arquivo de texto.
+
+    :param nome_arq_arvore: Nome do arquivo da árvore-B relacionada ao arquivo de dados
+    :param nome_arq_dados: Nome do arquivo de dados com os registros.
+    :param nome_arq_oper: Nome do arquivo de operações.
+    '''
+    with open(nome_arq_arvore, 'r+b') as arquivo_arv, \
+        open(nome_arq_dados, 'r+b') as dados, \
+        open(nome_arq_oper, 'r') as operacoes:
+
+        arvore_b = ArvoreB(arquivo_arv, ORDEM_ARVORE, carrega_dados=True)
+
+        op_str = operacoes.readline()
+        while op_str:
+            op = op_str.split(' ', maxsplit=1)
+
+            if op[0] == 'b':
+                id = int(op[1])
+                print(f"Buscando registro de ID \"{id}\"")
+                offset = arvore_b.busca_offset(id)
+                if offset is not None:
+                    dados.seek(offset)
+                    tam_reg = int.from_bytes(dados.read(2), 'little')
+                    reg = dados.read(tam_reg).decode()
+                    print(f"{reg} ({tam_reg} bytes | offset {offset})")
+                else:
+                    print(f"Erro: Registro de ID \"{id}\" não encontrado!")
+            
+            elif op[0] == 'i':
+                dados.seek(0, os.SEEK_END)
+                offset = dados.tell()
+                id = int(op[1].split("|")[0])
+                reg = op[1].replace('\n', '')
+                
+                print(f"Inserindo novo registro de ID \"{id}\"")
+                try:
+                    arvore_b.insere(id, offset)
+                    dados.write(reg.encode())
+                    print(f"{reg} ({len(reg)} bytes | offset {offset})")
+                except ElementoRepetidoException:
+                    print(f"Erro: chave de ID \"{id}\" já está na lista")
+            
+            else:
+                print(f"Erro: operação {op[0]} desconhecida!")
+            
+            op_str = operacoes.readline()
+            print()
+            
+        arvore_b.escreve_arvore()
+        print(f"Operações do arquivo {nome_arq_oper} concluiídas com sucesso!")
+
+
+# MOSTRA ÁRVORE-B
+def exibe_arvore(nome_arq_arvore: str):
+    '''
+    Exibe uma árvore-B na tela.
+
+    :param nome_arq_arvore: Nome do arquivo da árvore-B.
+    '''
+    with open(nome_arq_arvore, 'rb') as arq_arvore:
+        arvore_b = ArvoreB(arq_arvore, ORDEM_ARVORE, carrega_dados=True)
+        arvore_b.exibe()
+
 
 def main():
-    with open(NOME_ARQ_ARVORE, 'r+b') as arq_arvore:
-        arvore_b = ArvoreB(arq_arvore, ORDEM_ARVORE, carrega_dados=False)
+    if len(argv) == 1:
+        print("ERRO! Por favor, insira uma flag de operação (-b, -e ou -p)")
+        return
 
-        carrega_indice(arvore_b, NOME_ARQ_DADOS)
-        arvore_b.exibe_arvore()
+    flag = argv[1]
+
+    if flag == '-b':
+        cria_indice(NOME_ARQ_ARVORE, NOME_ARQ_DADOS)
+        print("Arquivo da árvore-B criado com sucesso!")
+
+    elif flag == '-e':
+        if len(argv) < 3:
+            print("ERRO! Por favor, insira o nome do arquivo de operações")
+            return
+        
+        try:
+            executa_operacoes(NOME_ARQ_ARVORE, NOME_ARQ_DADOS, argv[2])
+        except FileNotFoundError as e:
+            print("ERRO! Arquivo de operações não encontrado!")
+            print(e)
+    
+    elif flag == '-p':
+        try:
+            exibe_arvore(NOME_ARQ_ARVORE)
+        except FileNotFoundError:
+            print("ERRO! Arquivo da árvore-B não foi criada!")
+            print("Crie a árvore usando a flag -b")
+        except Exception as e:
+            print(e)
+    
+    else:
+        print(f"ERRO! Flag de operação {flag} desconhecida!")
 
     
 
