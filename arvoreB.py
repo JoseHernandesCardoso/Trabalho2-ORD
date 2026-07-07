@@ -12,7 +12,7 @@ from math import ceil as arredonda_cima, floor as arredonda_baixo
 NOME_ARQ_ARVORE = 'btree.dat'
 NOME_ARQ_DADOS = 'games.dat'
 
-ORDEM_ARVORE = 4
+ORDEM_ARVORE = 6
 RRN_INVALIDO = -1
 
 # formato das páginas: pares ID-Offset | RRNs descendentes
@@ -386,12 +386,18 @@ class ArvoreB:
         '''
         for i in range(self.num_paginas):
             pagina = self.carrega_pag(i)
-            print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
-            print(f"PAGINA {i}")
-            if i == self.rrn_raiz: print("PAGINA RAIZ!")
-            print(f"CHAVES: {pagina.chaves}")
-            print(f"DESCENDENTES: {pagina.descendentes}")
-            print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+            ids = []
+            offsets = []
+            for chave in pagina.chaves:
+                ids.append(chave.id)
+                offsets.append(chave.offset)
+            if i == self.rrn_raiz: print('-='*14 + " RAIZ " + "-="*14)
+            print(f"PAGINA {i}:")
+            print("      CHAVES = " + " | ".join(f"{c:>5}" for c in ids)) 
+            print("     OFFSETS = " + " | ".join(f"{o:>5}" for o in offsets))
+            print("DESCENDENTES = " + " | ".join(f"{d:>5}" for d in pagina.descendentes))
+            if i == self.rrn_raiz: print('-='*31)
+            print("\n")
 
 
 # CARREGA INDICES PARA A ÁRVORE-B
@@ -420,9 +426,9 @@ def carrega_indice(arvore_b: ArvoreB, nome_arq_dados: str):
 
 def main():
     with open(NOME_ARQ_ARVORE, 'r+b') as arq_arvore:
-        arvore_b = ArvoreB(arq_arvore, 0, carrega_dados=True)
-        
-        arvore_b.insere(10, 10)
+        arvore_b = ArvoreB(arq_arvore, ORDEM_ARVORE, carrega_dados=False)
+
+        carrega_indice(arvore_b, NOME_ARQ_DADOS)
         arvore_b.exibe_arvore()
 
     
