@@ -219,13 +219,13 @@ class ArvoreB:
         self.tam_cabecalho_fmt = calcsize(self.cabecalho_fmt)
 
         self.ordem = ordem
-        self.pagina_fmt = (ID_FORMAT + OFFSET_FORMAT)*(ordem-1) + RRN_FORMAT*ordem
+        self.pagina_fmt = (ID_FORMAT + OFFSET_FORMAT)*(self.ordem-1) + RRN_FORMAT*self.ordem
         self.tam_pagina_fmt = calcsize(self.pagina_fmt)
 
         if carrega_dados:
             self.carrega_dados()
             # Atualiza o format para a nova ordem lida do arquivo
-            self.pagina_fmt = (ID_FORMAT + OFFSET_FORMAT)*(ordem-1) + RRN_FORMAT*ordem
+            self.pagina_fmt = (ID_FORMAT + OFFSET_FORMAT)*(self.ordem-1) + RRN_FORMAT*self.ordem
             self.tam_pagina_fmt = calcsize(self.pagina_fmt)
         else:
             self.arquivo.truncate(0) # apaga dados do arquivo
@@ -255,7 +255,7 @@ class ArvoreB:
         Salva os dados da árvore no cabeçalho do arquivo.
         '''
         cabecalho = (self.ordem, self.num_paginas, self.rrn_raiz)
-        cabecalho_bytes = pack(self.cabecalho_fmt, cabecalho)
+        cabecalho_bytes = pack(self.cabecalho_fmt, *cabecalho)
         self.arquivo.seek(0)
         self.arquivo.write(cabecalho_bytes)
 
@@ -327,7 +327,11 @@ class ArvoreB:
 
     def insere_na_arvore(self, chave: ParIdOffset, rrn: Rrn) -> RetornoInsercao:
         '''
-        Auxiliar de insere. TODO
+        Insere uma chave em uma página da árvore.
+
+        :param chave: Chave a ser inserida.
+        :param rrn: RRN da página.
+        :returns: Dados da promoção (se a chave for inválida, não houve).
 
         :raises ElementoRepetidoException: Se o id fornecido já estiver na página.
         '''
@@ -415,12 +419,13 @@ def carrega_indice(arvore_b: ArvoreB, nome_arq_dados: str):
         
 
 def main():
-    with open(NOME_ARQ_ARVORE, 'w+b') as arq_arvore:
-        arvore_b = ArvoreB(arq_arvore, ORDEM_ARVORE, carrega_dados=False)
+    with open(NOME_ARQ_ARVORE, 'r+b') as arq_arvore:
+        arvore_b = ArvoreB(arq_arvore, 0, carrega_dados=True)
         
-        carrega_indice(arvore_b, NOME_ARQ_DADOS)
-
+        arvore_b.insere(10, 10)
         arvore_b.exibe_arvore()
+
+    
 
 if __name__ == "__main__":
     main()
